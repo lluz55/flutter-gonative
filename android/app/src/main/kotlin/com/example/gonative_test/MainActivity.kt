@@ -22,8 +22,7 @@ class MainActivity: FlutterActivity() {
           if(msg != null) {
             result.success(storageTest.write(msg))
           }
-          result.error("msg = null", "",null)
-          
+          result.error("msg = null", "",null)          
         }
         catch(e: Exception) {
           result.error("storageTest_write", e.toString(), null)
