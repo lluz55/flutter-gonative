@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  runApp(MyApp());
+  getPermission();
+}
+
+void getPermission() async {
+  // TODO...
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -30,18 +37,12 @@ class _MyHomePageState extends State<MyHomePage> {
   static const platform = const MethodChannel("example.com/gonative");
 
   Future<void> _incrementCounter() async {
-    int incrementCounter;
-
     try {
       var args = Map();
-      args["data"] = _counter;
-      incrementCounter =
-          await platform.invokeMethod("dataProcessor_increment", args);
+      await platform.invokeMethod("Server_run", args);
     } on PlatformException catch (e) {
       print(e);
     }
-
-    if (incrementCounter != null) setState(() => _counter = incrementCounter);
   }
 
   @override
