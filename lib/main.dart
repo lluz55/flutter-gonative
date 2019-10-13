@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
-void main() => runApp(MyApp());
+import 'components/storage_options/storage_options.dart';
+import 'providers/storage_provider.dart';
+
+void main() => runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(
+            builder: (_) => StorageProvider(),
+          )
+        ],
+        child: MyApp(),
+      ),
+    );
 
 class MyApp extends StatelessWidget {
   @override
@@ -9,9 +21,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.blueGrey,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'GO'),
     );
   }
 }
@@ -25,47 +37,48 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  static const platform = const MethodChannel("example.com/gonative");
-
-  Future<void> _incrementCounter() async {
-    int incrementCounter;
-
-    try {
-      var args = Map();
-      args["data"] = _counter;
-      incrementCounter =
-          await platform.invokeMethod("dataProcessor_increment", args);
-    } on PlatformException catch (e) {
-      print(e);
-    }
-
-    if (incrementCounter != null) setState(() => _counter = incrementCounter);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        backgroundColor: Colors.blueGrey[800],
+        title: Row(
           children: <Widget>[
+            Text(widget.title),
             Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
+              ' Storage Test',
+              style: TextStyle(fontWeight: FontWeight.w300),
             ),
           ],
         ),
       ),
+      body: Container(
+        padding: EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            RichText(
+              text: TextSpan(
+                text: 'The test write something to ',
+                style: TextStyle(fontSize: 16.0, color: Colors.blueGrey[800]),
+                children: [
+                  TextSpan(
+                    text: 'test.txt',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18.0),
+                  ),
+                  TextSpan(text: ' and save to /sdcard')
+                ],
+              ),
+            ),
+            SizedBox(height: 50.0),
+            StorageOptions()
+          ],
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {},
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
