@@ -1,74 +1,134 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:toast/toast.dart';
 
-void main() => runApp(MyApp());
+class HandleNative {
+  static const platform = const MethodChannel('example.com/gonative');
+}
+
+void main() {
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.orange,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Create SQLite DataBase'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
   final String title;
+
+  const MyHomePage({Key key, this.title}) : super(key: key);
 
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  bool _granted = false;
+  bool _existsDB = false;
 
-  static const platform = const MethodChannel("example.com/gonative");
+  @override
+  initState() {
+    Future.delayed(Duration(milliseconds: 250), () async {
+      _granted = await _grantPermission();
+      setState(() {});
+    });
+    super.initState();
+  }
 
-  Future<void> _incrementCounter() async {
-    int incrementCounter;
+  Future<bool> _grantPermission() async {
+    final storagePerm = PermissionHandler();
+    bool isShown = await PermissionHandler()
+        .shouldShowRequestPermissionRationale(PermissionGroup.contacts);
+    if (!isShown) {
+      final result =
+          await storagePerm.requestPermissions([PermissionGroup.storage]);
+      if (result[PermissionGroup.storage] == PermissionStatus.granted) {
+        try {
+          await HandleNative.platform.invokeMethod("db_createDir");
+        } catch (e) {
+          print(e);
+        }
+        setState(() {
+          _granted = true;
+        });
+        return true;
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
 
-    try {
-      var args = Map();
-      args["data"] = _counter;
-      incrementCounter =
-          await platform.invokeMethod("dataProcessor_increment", args);
-    } on PlatformException catch (e) {
-      print(e);
+  Future<void> _createDB(BuildContext context) async {
+    await _checkExistsDB();
+    if (_existsDB) {
+      Toast.show('DB already exists', context);
+      return;
     }
 
-    if (incrementCounter != null) setState(() => _counter = incrementCounter);
+    final granted = await _grantPermission();
+    if (granted) {
+      try {
+        var args = Map();
+        await HandleNative.platform.invokeMethod("db_opendb", args);
+      } on PlatformException catch (e) {
+        print(e);
+      }
+      await _checkExistsDB();
+      if (_existsDB) {
+        Toast.show('DB created successfully', context);
+      }
+    } else {}
+  }
+
+  Future<void> _checkExistsDB() async {
+    try {
+      _existsDB = await HandleNative.platform.invokeMethod('db_existsDB');
+      setState(() {});
+    } catch (e) {}
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(widget.title, style: TextStyle(color: Colors.white)),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
+            !_granted
+                ? Text('Grant Storage Permission', style: _infoStyle)
+                : Text('Click on the FAB to create DB', style: _infoStyle),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
+        onPressed: () => _createDB(context),
+        tooltip: 'Open DB',
+        child: Icon(
+          _granted ? Icons.save_alt : Icons.report_problem,
+          color: Colors.white,
+        ),
       ),
     );
   }
+
+  final _infoStyle = TextStyle(
+    fontSize: 18.0,
+    fontWeight: FontWeight.w300,
+  );
 }

@@ -6,27 +6,40 @@ import io.flutter.app.FlutterActivity
 import io.flutter.plugins.GeneratedPluginRegistrant
 import io.flutter.plugin.common.MethodChannel
 
-import gonativelib.DataProcessor
+import gonativelib.DB
 
 class MainActivity: FlutterActivity() {
-  internal var goNativeDataProcessor = DataProcessor()
+  internal var db = DB()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     GeneratedPluginRegistrant.registerWith(this)
 
     MethodChannel(flutterView, "example.com/gonative").setMethodCallHandler { methodCall, result ->
-      if(methodCall.method == "dataProcessor_increment"){
+      if(methodCall.method == "db_opendb"){
         try {
-          val data = methodCall.argument<Int>("data")
-          if(data != null) {
-            result.success(goNativeDataProcessor.increment(data.toLong()))
-          }
-          result.error("data = null", "",null)
-          
+            result.success(db.openDB())          
         }
         catch(e: Exception) {
-          result.error("dataProcessor_increment", e.toString(), null)
+          result.error("db_opendb", e.toString(), null)
+        }
+      }
+
+       if(methodCall.method == "db_createDir"){
+        try {
+            result.success(db.createDir())          
+        }
+        catch(e: Exception) {
+          result.error("db_createDir", e.toString(), null)
+        }
+      }
+
+       if(methodCall.method == "db_existsDB"){
+        try {
+            result.success(db.existsDB())          
+        }
+        catch(e: Exception) {
+          result.error("db_existsDB", e.toString(), null)
         }
       }
 
