@@ -16,16 +16,18 @@ class MainActivity: FlutterActivity() {
     GeneratedPluginRegistrant.registerWith(this)
 
     MethodChannel(flutterView, "example.com/gonative").setMethodCallHandler { methodCall, result ->
-      if(methodCall.method == "Server_run"){
-        try {
-            result.success(server.run())
-          result.error("data = null", "",null)
-          
+      Thread( Runnable(){
+        run(){
+          if(methodCall.method == "Server_run"){
+            try {
+                result.success(server.run())              
+            }
+            catch(e: Exception) {
+              result.error("Server_run", e.toString(), null)
+            }
+          }
         }
-        catch(e: Exception) {
-          result.error("Server_run", e.toString(), null)
-        }
-      }
+      }).start()
 
     }
   }

@@ -1,19 +1,25 @@
+import 'dart:isolate';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
   getPermission();
 }
 
 void getPermission() async {
-  // TODO...
+  // final perm = PermissionHandler();
+  // perm.requestPermissions([PermissionGroup.storage, .])
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -33,13 +39,14 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  bool _serverStarted = false;
 
   static const platform = const MethodChannel("example.com/gonative");
 
-  Future<void> _incrementCounter() async {
+  static Future<void> _startServer() async {
     try {
       var args = Map();
-      await platform.invokeMethod("Server_run", args);
+      platform.invokeMethod("Server_run", args);
     } on PlatformException catch (e) {
       print(e);
     }
@@ -55,18 +62,35 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
+            _serverStarted
+                ? Text(
+                    'Server listening at port 8081\n Go to localhost:8081/ping')
+                : Text(
+                    'Server stoped',
+                  ),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.display1,
             ),
+            SizedBox(height: 50.0),
+            RaisedButton(
+              onPressed: _serverStarted
+                  ? null
+                  : () async {
+                      _startServer();
+                      _serverStarted = true;
+                    },
+              child: Text('Start Server'),
+            )
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
+        onPressed: () {
+          setState(() {
+            _counter++;
+          });
+        },
         tooltip: 'Increment',
         child: Icon(Icons.add),
       ),
